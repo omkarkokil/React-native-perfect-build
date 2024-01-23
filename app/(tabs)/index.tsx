@@ -1,9 +1,14 @@
-import BasicInput from "@/components/InputFields/BasicInput";
-import { View } from "@/components/Themed";
-import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
-import { SubmitHandler, useForm } from "react-hook-form";
-import { Alert, Text, TouchableOpacity } from "react-native";
+import { getTopRatedMovies, getUpcomingMovies } from "@/api/MovieApi";
+import MovieList from "@/components/Trending/MovieList";
+import Trending from "@/components/Trending/Trending";
+import { useQuery } from "@tanstack/react-query";
+import { StatusBar } from "expo-status-bar";
+import { ScrollView, Text, View } from "react-native";
+import {
+  Bars3CenterLeftIcon,
+  MagnifyingGlassIcon,
+} from "react-native-heroicons/outline";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export type formData = {
   email: string;
@@ -11,64 +16,36 @@ export type formData = {
 };
 
 export default function TabOneScreen() {
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<formData>({
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+  const upcoming = useQuery({
+    queryKey: ["upcoming"],
+    queryFn: getUpcomingMovies,
   });
-
-  const loginMutation = useMutation({
-    mutationFn: (cred: formData) => {
-      const data = axios.post(
-        "https://aegis-qa.argantechnology.com/api/route/employee/login",
-        cred
-      );
-
-      return data;
-    },
-    onSuccess: (data) => {
-      console.log(data);
-      Alert.alert("Login success");
-    },
-    onError: () => {
-      Alert.alert("Something went r");
-      console.log("error");
-    },
+  const topRated = useQuery({
+    queryKey: ["topRated"],
+    queryFn: getTopRatedMovies,
   });
-
-  const onSubmit: SubmitHandler<formData> = async (data) => {
-    loginMutation.mutate(data);
-  };
 
   return (
-    <View className="flex flex-col h-screen justify-center items-center">
-      <View className="space-y-2 w-[70%]">
-        <Text className="text-2xl my-2">Login Page</Text>
-        <BasicInput
-          title="Enter your email"
-          keyboardType={"email-address"}
-          name={"email"}
-          control={control}
-        />
-        <BasicInput
-          title="Enter your password"
-          keyboardType={"default"}
-          secureTextEntry={true}
-          name={"password"}
-          control={control}
-        />
-        <TouchableOpacity
-          onPress={handleSubmit(onSubmit)}
-          className="bg-sky-400 w-[80px]  px-4 py-2 rounded-lg"
-        >
-          <Text className="text-white">Submit</Text>
-        </TouchableOpacity>
-      </View>
+    <View className="flex-1 bg-neutral-800 ">
+      <SafeAreaView className="mb-3">
+        <StatusBar style="light" />
+        <View className="flex-row justify-between items-center mx-4">
+          <Bars3CenterLeftIcon size="30" strokeWidth={2} color={"white"} />
+          <Text className="text-white text-bold text-3xl">
+            <Text className="text-[#eab308]">M</Text>ovies
+          </Text>
+          <MagnifyingGlassIcon size="30" strokeWidth={2} color={"white"} />
+        </View>
+      </SafeAreaView>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 10 }}
+      >
+        <Trending />
+        <MovieList title={"Upcoming"} datas={upcoming?.data?.results} />
+        <MovieList title={"Top Rated"} datas={topRated?.data?.results} />
+      </ScrollView>
     </View>
   );
 }
